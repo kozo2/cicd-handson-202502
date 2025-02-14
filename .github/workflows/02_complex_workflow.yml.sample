@@ -1,0 +1,51 @@
+name: 02_complex_workflow
+
+on:
+  pull_request:
+    branches: [ 'main' ]
+
+jobs:
+  # test_linuxジョブとtest_macジョブは並列に実行される
+  test_linux:
+    # サーバーにubuntuを使用
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+
+      - name: Test
+        run: |
+          cd src
+          python -m unittest test_main
+
+  test_mac:
+    # サーバーにmacを使用
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+
+      - name: Test
+        run: |
+          cd src
+          python -m unittest test_main
+
+  # notify_resultジョブは、test_linuxとtest_macが終わった後に実行される
+  notify_result:
+    runs-on: ubuntu-latest
+    # 以下のコメントを外すと、前のジョブが失敗しても実行される
+    # if: ${{ always() }}
+    needs: [
+      test_linux,
+      test_mac
+    ]
+    steps:
+      # notice ワークフローコマンド
+      # github actionsの実行画面にメッセージを表示できる
+      # https://docs.github.com/ja/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions
+      - name: Notify result
+        run: |
+          echo "::notice title='notice'::Job completed!"
+

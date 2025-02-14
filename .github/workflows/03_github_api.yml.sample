@@ -1,0 +1,34 @@
+name: 03_github_api
+
+on:
+  pull_request:
+    branches: [ 'main' ]
+
+jobs:
+  test_job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+
+      - name: Test
+        run: |
+          cd src
+          python -m unittest test_main
+
+      - name: Check PR body
+        run: |
+          BODY=$(gh pr view ${{ github.event.pull_request.number }} \
+            --json 'body' \
+            --jq '.body')
+          if [[ "${BODY}" =~ 目的 ]]; then
+            echo "目的があります"
+          else
+            echo "PRのbodyには目的を書いてください"
+            exit 1
+          fi
+        env:
+          # secrets.GITHUB_TOKENはデフォルトで設定される
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
